@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU Lesser General Public License along
 // with the library. If not, see <http://www.gnu.org/licenses/>.
 
+//go:build none
 // +build none
 
 package main
@@ -71,6 +72,7 @@ func main() {
 		fmt.Printf("  Vendor ID:  %#04x\n", raw.VendorID)
 		fmt.Printf("  Product ID: %#04x\n", raw.ProductID)
 		fmt.Printf("  Interface:  %d\n", raw.Interface)
+		fmt.Printf("  Serial:  %s\n", raw.Serial)
 		fmt.Println(strings.Repeat("-", 128))
 	}
 }
