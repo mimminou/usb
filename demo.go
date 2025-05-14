@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/karalabe/usb"
+	"github.com/mimminou/usb"
 )
 
 func main() {
@@ -71,8 +71,10 @@ func main() {
 		fmt.Printf("  OS Path:    %s\n", raw.Path)
 		fmt.Printf("  Vendor ID:  %#04x\n", raw.VendorID)
 		fmt.Printf("  Product ID: %#04x\n", raw.ProductID)
-		fmt.Printf("  Interface:  %d\n", raw.Interface)
 		fmt.Printf("  Serial:  %s\n", raw.Serial)
+		fmt.Printf("  Manufacturer:  %s\n", raw.Manufacturer)
+		fmt.Printf("  Product:  %s\n", raw.Product)
+		fmt.Printf("  Interface:  %d\n", raw.Interface)
 		fmt.Println(strings.Repeat("-", 128))
 	}
 }

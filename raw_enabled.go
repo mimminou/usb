@@ -142,35 +142,30 @@ func enumerateRawWithRef(vendorID uint16, productID uint16) ([]DeviceInfo, error
 						// Enumeration matched, bump the device refcount to avoid cleaning it up
 						C.libusb_ref_device(dev)
 
-						// Open the device to get ascii serial number
+						// Open the device to get additional information
 						var handle *C.libusb_device_handle
 						if err := fromRawErrno(C.libusb_open(dev, &handle)); err != nil {
 							continue
 						}
 						defer C.libusb_close(handle)
-						var serialString string
-						if desc.iSerialNumber > 0 {
-							serial := make([]byte, 256)
-							ret := C.libusb_get_string_descriptor_ascii(handle, C.uint8_t(desc.iSerialNumber), (*C.uint8_t)(&serial[0]), C.int(len(serial)))
-							if ret < 0 {
-								continue
-							}
-							// Convert to string
-							serialString = string(serial[:ret])
-						}
+						serialString := getSerialNumber(handle, desc)
+						manString := getManufacturerName(handle, desc)
+						prodString := getProductName(handle, desc)
 
 						port := uint8(C.libusb_get_port_number(dev))
 
 						deviceInfo := DeviceInfo{
-							Path:      fmt.Sprintf("%04x:%04x:%02d", uint16(desc.idVendor), uint16(desc.idProduct), port),
-							VendorID:  uint16(desc.idVendor),
-							ProductID: uint16(desc.idProduct),
-							Interface: ifacenum,
-							Serial:    serialString,
-							rawDevice: dev,
-							rawPort:   &port,
-							rawReader: reader,
-							rawWriter: writer,
+							Path:         fmt.Sprintf("%04x:%04x:%02d", uint16(desc.idVendor), uint16(desc.idProduct), port),
+							VendorID:     uint16(desc.idVendor),
+							ProductID:    uint16(desc.idProduct),
+							Interface:    ifacenum,
+							Serial:       serialString,
+							Manufacturer: manString,
+							Product:      prodString,
+							rawDevice:    dev,
+							rawPort:      &port,
+							rawReader:    reader,
+							rawWriter:    writer,
 						}
 
 						infos = append(infos, deviceInfo)
@@ -221,6 +216,48 @@ func openRaw(info DeviceInfo) (*rawDevice, error) {
 		DeviceInfo: info,
 		handle:     handle,
 	}, nil
+}
+
+func getManufacturerName(handle *C.struct_libusb_device_handle, descriptor C.struct_libusb_device_descriptor) string {
+	var manufacturerString string
+	if descriptor.iManufacturer > 0 {
+		man := make([]byte, 256)
+		ret := C.libusb_get_string_descriptor_ascii(handle, C.uint8_t(descriptor.iManufacturer), (*C.uint8_t)(&man[0]), C.int(len(man)))
+		if ret < 0 {
+			manufacturerString = ""
+		}
+		// Convert to string
+		manufacturerString = string(man[:ret])
+	}
+	return manufacturerString
+}
+
+func getProductName(handle *C.struct_libusb_device_handle, descriptor C.struct_libusb_device_descriptor) string {
+	var productString string
+	if descriptor.iProduct > 0 {
+		prod := make([]byte, 256)
+		ret := C.libusb_get_string_descriptor_ascii(handle, C.uint8_t(descriptor.iProduct), (*C.uint8_t)(&prod[0]), C.int(len(prod)))
+		if ret < 0 {
+			productString = ""
+		}
+		// Convert to string
+		productString = string(prod[:ret])
+	}
+	return productString
+}
+
+func getSerialNumber(handle *C.struct_libusb_device_handle, descriptor C.struct_libusb_device_descriptor) string {
+	var serialString string
+	if descriptor.iSerialNumber > 0 {
+		serial := make([]byte, 256)
+		ret := C.libusb_get_string_descriptor_ascii(handle, C.uint8_t(descriptor.iSerialNumber), (*C.uint8_t)(&serial[0]), C.int(len(serial)))
+		if ret < 0 {
+			serialString = ""
+		}
+		// Convert to string
+		serialString = string(serial[:ret])
+	}
+	return serialString
 }
 
 // rawDevice is a live low level USB connected device handle.
